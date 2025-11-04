@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>수뭉이 팀플 관리 - 시작 화면</title>
+
+  <style>
+    /* 시작 ===================================================================
+       [공통: 색상/그림자/반경 토큰] - team.html과 톤/무드 통일
+       =================================================================== */
+    :root{
+      --bg:#f5f7fb; --card:#ffffff;
+      --accent:#4b7bec; --accent-2:#6c8bff;
+      --text:#1f2937; --muted:#748199; --line:#e7ecf6;
+      --shadow:0 12px 30px rgba(31,41,55,.08);
+      --shadow-soft:0 6px 18px rgba(31,41,55,.06);
+      --r-xl:20px; --r-2xl:28px; --r-3xl:36px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:'Pretendard',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      color:var(--text);
+      min-height:100svh; display:flex; flex-direction:column;
+      background:
+        radial-gradient(1200px 500px at 50% -200px, rgba(99,160,255,.20), transparent 60%),
+        linear-gradient(180deg,#eef3ff 0%, #f7f9ff 40%, #f5f7fb 100%);
+    }
+
+    /* ---------------------------------------------------------
+       [히어로: 페이지 맨 상단, 둥근 모서리 + 가운데 정렬 + 큰 글자]
+       --------------------------------------------------------- */
+    header.hero{
+      position:relative;
+      background: linear-gradient(135deg,var(--accent) 0%, var(--accent-2) 100%);
+      color:#fff;
+      border-radius:22px;
+      box-shadow:var(--shadow);
+      padding:28px 20px 34px;
+      z-index: 3;
+      margin: 10px 10px 0;
+    }
+    .hero-inner{
+      max-width:1180px; margin:0 auto;
+      text-align:center;
+    }
+    .hero h1{
+      margin:0;
+      font-size:clamp(26px,3.6vw,36px);
+      font-weight:800; letter-spacing:.2px
+    }
+    .hero p{
+      margin:10px 0 0;
+      opacity:.96; font-weight:600;
+      font-size:clamp(14px,1.6vw,18px);
+    }
+
+    /* ---------------------------------------------------------
+       [메인: 중앙 스타트 패널] (버튼1/버튼2)
+       --------------------------------------------------------- */
+    main{ flex:1; display:grid; place-items:center; padding:32px 16px 44px; position:relative }
+    .stage{ width:min(960px,96vw); position:relative; z-index:2 }
+
+    .start-panel{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      padding:26px 20px 28px;
+    }
+    .intro{ text-align:center; margin-bottom:18px }
+    .intro h2{ margin:0 0 6px; font-size:clamp(20px,2.6vw,28px); font-weight:900; color:#222 }
+    .intro p{ margin:0; color:var(--muted); font-weight:600 }
+
+    .cta-wrap{
+      margin-top:18px;
+      display:flex; flex-direction:column; gap:14px;
+      align-items:center; justify-content:center;
+    }
+    /* 공통 버튼 스타일 */
+    .cta{
+      width:min(400px,92%);
+      padding:18px 20px;
+      border-radius:999px;                       /* (2) 둥근 테두리 유지 */
+      background:#eef3ff; color:#2b59ff;
+      font-weight:900; font-size:1.05rem; letter-spacing:.2px;
+      box-shadow:var(--shadow-soft);
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      cursor:pointer; text-decoration:none;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s;
+      border-width:2px; border-style:solid;      /* (2) 테두리 두께/스타일 */
+    }
+    /* (2) 버튼별 테두리 색상 */
+    .cta-1{ border-color:#5d7bff }               /* 기존 팀플 수정 */
+    .cta-2{ border-color:#6c8bff }               /* 새 팀플 생성 */
+
+    .cta:hover{ transform:translateY(-2px); box-shadow:var(--shadow); background:#e2ebff }
+    .cta:active{ transform:translateY(0) }
+
+    /* ---------------------------------------------------------
+       [수뭉이 데코 이미지]
+       - sm2 제거
+       - sm3: 오른쪽 하단(요청 1 변경)
+       --------------------------------------------------------- */
+    .decos{ position:absolute; left:0; right:0; top:0; z-index:1; pointer-events:none }
+    .deco{ position:absolute; filter: drop-shadow(0 10px 16px rgba(31,41,55,.12)); user-select:none; opacity:.95 }
+
+    /* sm1: 좌측 중상단 - 히어로와 겹치지 않게 */
+    .deco.sm1{ left: 28px; top: 140px; width:min(160px,22vw); transform:rotate(-4deg) }
+
+    /* sm3: 화면 '오른쪽 하단' (요청 1) */
+    .deco.sm3{ right: 8px; top: 450px; width:min(180px,26vw) }
+
+    /* 작은 화면 대응 */
+    @media (max-width:520px){
+      .deco.sm1{ left: 16px; top: 150px; width:120px }
+      .deco.sm3{ right: 8px; bottom: 8px; width:130px }
+    }
+
+    /* 푸터 */
+    footer{
+      padding:14px; text-align:center; color:var(--muted); font-size:.85rem;
+      z-index:2; position:relative
+    }
+    .footnote{ font-size:.72rem; color:var(--muted); margin-top:4px } /* (4) 더 작은 글씨 */
+    /* 끝 ===================================================================== */
+  </style>
+</head>
+<body>
+
+  <!-- 히어로: 맨 상단, 둥근 테두리 + 가운데 정렬 텍스트 -->
+  <header class="hero" role="banner">
+    <div class="hero-inner">
+      <h1>수뭉이 팀플 관리</h1>
+      <p>팀 일정 · 역할 · 진행도를 부드럽게 한 곳에서</p>
+    </div>
+  </header>
+
+  <!-- 메인: 패널/버튼 + 수뭉이 데코 -->
+  <main>
+    <div class="stage">
+      <!-- 수뭉이 데코 (sm2 제거됨) -->
+      <div class="decos" aria-hidden="true">
+        <img class="deco sm1" src="./sm1.png" alt="">
+        <img class="deco sm3" src="./sm3.png" alt="">
+      </div>
+
+      <section class="start-panel" aria-labelledby="titleStart">
+        <div class="intro">
+          <h2 id="titleStart">무엇을 하시겠어요?</h2>
+          <p>아래에서 시작 작업을 선택하세요.</p>
+        </div>
+
+        <div class="cta-wrap">
+          <!-- 1) 기존 팀플 관리창 수정 → team.html -->
+          <a class="cta cta-1" href="./team.html" id="openExisting">🔧 기존 팀플 관리창 수정</a>
+          <!-- 2) 새 팀플 관리창 생성 → team.html?mode=new -->
+          <a class="cta cta-2" href="./newteam.html" id="createNew">✨ 새 팀플 관리창 생성</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- 단축키: E(기존), N(새로) -->
+  <script>
+    document.addEventListener('keydown', (e)=>{
+      if (e.target && ['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+      if (e.key === 'e' || e.key === 'E') document.getElementById('openExisting').click();
+      if (e.key === 'n' || e.key === 'N') document.getElementById('createNew').click();
+    });
+
+    // 새 팀 생성 의도 저장(선택)
+    document.getElementById('createNew').addEventListener('click', ()=>{
+      try{ localStorage.setItem('sumoongi:newTeamIntent','1'); }catch(_){}
+    });
+  </script>
+
+  <footer>
+    © 2025 수뭉이 팀플 관리
+    <div class="footnote">(해당 웹페이지에서 사용된 이미지는 수뭉이 캐릭터 일러스트를 참조했습니다)</div>
+  </footer>
+</body>
+</html>
