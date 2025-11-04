@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>수뭉이 팀플 관리</title>
+
+  <style>
+    :root{
+      --bg:#f5f7fb; --card:#fff; --accent:#4b7bec; --accent-2:#6c8bff;
+      --text:#1f2937; --muted:#748199; --line:#e7ecf6;
+      --chip:#eaf0ff; --chip-text:#3b6ad1;
+      --shadow:0 12px 30px rgba(31,41,55,.08);
+      --shadow-soft:0 6px 18px rgba(31,41,55,.06);
+      --r-xl:20px; --r-2xl:28px; --r-3xl:36px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Pretendard',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+
+    /* ===== 히어로 ===== */
+    .hero-wrap{padding:28px 18px 0}
+    .hero{
+      position:relative; isolation:isolate;
+      max-width:1180px; margin:0 auto; padding:28px 28px 22px;
+      border-radius:var(--r-3xl);
+      background: linear-gradient(135deg,var(--accent) 0%,var(--accent-2) 100%);
+      color:#fff; box-shadow:var(--shadow); overflow:hidden;
+    }
+    .hero h1{margin:0; font-size:clamp(22px,3vw,28px); font-weight:800; letter-spacing:.2px}
+    .hero-sub{margin-top:6px; opacity:.9; font-weight:500}
+    .spark{
+      position:absolute; right:14rem; bottom:-2rem; width:220px; height:220px; opacity:.18; filter:blur(2px);
+      background:
+        radial-gradient(ellipse at 30% 30%,#fff 0 28%,transparent 29%),
+        radial-gradient(ellipse at 70% 60%,#fff 0 20%,transparent 21%),
+        radial-gradient(ellipse at 55% 35%,#fff 0 12%,transparent 13%);
+      border-radius:50%; transform:rotate(12deg); pointer-events:none;
+    }
+    .mascot{
+      position:absolute; right:14px; bottom:-6px; width:min(220px,28vw); aspect-ratio:1/1;
+      opacity:.85;
+      filter: drop-shadow(0 12px 20px rgba(0,0,0,.18)) saturate(1.02) contrast(1.02) brightness(1.03);
+      transform:translateY(0) rotate(-2deg); pointer-events:none; user-select:none;
+      animation: float 6s ease-in-out infinite;
+      display:block; object-fit:contain;
+    }
+    .mask-gradient{position:absolute; inset:0; background: radial-gradient(1200px 260px at 30% 30%, rgba(0,0,0,.0) 0 55%, rgba(0,0,0,.08) 100%); pointer-events:none}
+    @keyframes float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-6px) rotate(-1deg)}}
+    @media (prefers-reduced-motion:reduce){ .mascot{animation:none} }
+
+    /* ===== 카드 그리드 ===== */
+    .dashboard{display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:28px; padding:24px 18px 40px; max-width:1180px; margin:0 auto}
+    .card{background:var(--card); border-radius:var(--r-2xl); border:1px solid var(--line); box-shadow:var(--shadow-soft); padding:18px; transition:transform .18s, box-shadow .18s}
+    .card:hover{transform:translateY(-4px); box-shadow:var(--shadow)}
+    .card-head{display:flex; align-items:center; gap:10px; margin-bottom:10px}
+    .chip{display:inline-flex; align-items:center; gap:6px; background:var(--chip); color:var(--chip-text); padding:6px 12px; border-radius:999px; font-weight:700; font-size:.85rem}
+    .team-name{font-size:1.05rem; font-weight:700; color:var(--text); border:1px solid var(--line); border-radius:999px; padding:10px 14px; min-width:160px; width:60%; background:#fff; outline:none}
+    .btn{border:none; border-radius:999px; padding:10px 14px; font-weight:700; cursor:pointer}
+    .btn.ghost{background:#eef3ff; color:#3b6ad1}
+    .btn.ghost:hover{background:#e2ebff}
+    .btn.primary{background:linear-gradient(90deg,#4b7bec,#6c8bff); color:#fff}
+    .btn.primary:hover{filter:brightness(.98)}
+
+    .section{margin-top:14px}
+    .section h3{margin:0 0 10px; font-size:1rem; color:#3b4352; display:flex; align-items:center; gap:8px}
+    .box{border:1px solid var(--line); border-radius:var(--r-xl); background:#fbfcff; padding:10px}
+
+    /* 체크리스트 + 메타 */
+    .todo{list-style:none; padding:0; margin:0}
+    .todo li{display:flex; flex-direction:column; gap:6px; padding:12px 10px; border-radius:14px}
+    .todo li+li{border-top:1px dashed #eef2fb}
+    .todo .row{display:flex; align-items:center; gap:10px}
+    .todo input[type="checkbox"]{width:20px; height:20px; cursor:pointer; accent-color:var(--accent)}
+    .todo label{flex:1; cursor:pointer}
+    .meta{margin-left:30px; font-size:.9rem; display:flex; gap:14px; flex-wrap:wrap}
+    .meta .due{ color:#ff8a8a; font-weight:700 }   /* 연한 레드 */
+    .meta .subm{ color:#9ab4ff; font-weight:700 }  /* 연한 블루 */
+    .meta .reason{ color:var(--muted); font-weight:600 }
+
+    /* 진행도 */
+    .progress-wrap{margin-top:12px}
+    .progress-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; color:var(--muted); font-weight:600}
+    .progress-bar{width:100%; height:12px; border-radius:999px; background:#e8edff; overflow:hidden; box-shadow:inset 0 2px 5px rgba(100,120,180,.15)}
+    .progress{height:100%; width:0%; background:linear-gradient(90deg,#5d7bff,#63a0ff); transition:width .25s}
+    .btn-row{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap}
+    .muted{color:var(--muted)}
+    @media (max-width:420px){ .team-name{width:100%} .btn.open{display:none} }
+
+    /* ===== 지각 사유 모달 ===== */
+    .backdrop{position:fixed; inset:0; background:rgba(15,22,42,.45); display:none; align-items:center; justify-content:center; z-index:1000}
+    .backdrop.show{display:flex}
+    .modal{width:min(520px,92vw); background:#fff; border-radius:18px; box-shadow:var(--shadow); border:1px solid var(--line); padding:20px; animation:pop .14s ease-out}
+    @keyframes pop{from{transform:scale(.98); opacity:.6} to{transform:scale(1); opacity:1}}
+    .modal h3{margin:0 0 8px; font-size:1.15rem}
+    .modal p{margin:0 0 14px; color:var(--muted); font-weight:600}
+    .modal .opts{display:grid; gap:10px; margin-bottom:16px}
+    .modal label{display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; cursor:pointer}
+    .modal .actions{display:flex; gap:8px; justify-content:flex-end}
+    .modal button{border:none; border-radius:999px; padding:10px 14px; font-weight:800; cursor:pointer}
+    .modal .cancel{background:#eef3ff; color:#3b6ad1}
+    .modal .ok{background:linear-gradient(90deg,#4b7bec,#6c8bff); color:#fff}
+
+    /* ===== 리포트(팀플 종료) 전체화면 모달 ===== */
+    .report{position:fixed; inset:0; background:rgba(15,22,42,.55); display:none; align-items:center; justify-content:center; z-index:1100}
+    .report.show{display:flex}
+    .report-panel{width:min(900px,96vw); max-height:92vh; overflow:auto; background:#fff; border:1px solid var(--line); border-radius:24px; box-shadow:var(--shadow); padding:22px}
+    .report-header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px}
+    .report-title{font-size:1.2rem; font-weight:800}
+    .report-close{border:none; border-radius:999px; padding:10px 14px; font-weight:800; cursor:pointer; background:#eef3ff; color:#3b6ad1}
+    .kpi{display:flex; gap:12px; flex-wrap:wrap; margin:12px 0 18px}
+    .kpi .box{background:#f6f9ff; border:1px solid var(--line); border-radius:16px; padding:14px 16px}
+    .kpi strong{font-size:1.4rem}
+    table.report-table{width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden}
+    table.report-table th, table.report-table td{padding:12px 14px; border-bottom:1px solid var(--line); text-align:left}
+    table.report-table th{background:#f7f9ff; font-weight:800}
+    table.report-table tr:last-child td{border-bottom:none}
+  </style>
+</head>
+<body>
+
+  <!-- 히어로 -->
+  <div class="hero-wrap">
+    <div class="hero">
+      <h1>수뭉이 팀플 관리</h1>
+      <div class="hero-sub">팀 일정 · 역할 · 진행도를 부드럽게 한 곳에서</div>
+      <div class="spark" aria-hidden="true"></div>
+      <img class="mascot" src="./sumoongi.png" alt="수뭉이 마스코트" loading="lazy" />
+      <div class="mask-gradient" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <!-- 대시보드 -->
+  <main class="dashboard">
+    <!-- 카드 A -->
+    <section class="card" data-card data-team-id="teamA">
+      <div class="card-head">
+        <span class="chip">팀플</span>
+        <input class="team-name" value="객프팀플" aria-label="팀 이름 입력" />
+        <button class="btn open" data-open>상세 열기</button>
+      </div>
+
+      <div class="section">
+        <h3>📌 주요 일정</h3>
+        <div class="box">
+          <ul class="todo" data-list="main">
+            <li data-due="12/07/일/23:59">
+              <div class="row">
+                <input type="checkbox" id="a_m1" />
+                <label for="a_m1">미팅날짜</label>
+              </div>
+              <div class="meta"><span class="due">마감시간 : 12/07/일/23:59</span><span class="subm">제출시간 : -</span></div>
+            </li>
+            <li data-due="12/10/수/18:00">
+              <div class="row">
+                <input type="checkbox" id="a_m2" />
+                <label for="a_m2">주차별 할 일 점검</label>
+              </div>
+              <div class="meta"><span class="due">마감시간 : 12/10/수/18:00</span><span class="subm">제출시간 : -</span></div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>👥 내 역할</h3>
+        <div class="box">
+          <ul class="todo" data-list="role">
+            <li data-due="12/12/금/23:59">
+              <div class="row">
+                <input type="checkbox" id="a_r1" />
+                <label for="a_r1">첫 화면 만들기</label>
+              </div>
+              <div class="meta"><span class="due">마감시간 : 12/12/금/23:59</span><span class="subm">제출시간 : -</span></div>
+            </li>
+            <li data-due="12/14/일/20:00">
+              <div class="row">
+                <input type="checkbox" id="a_r2" />
+                <label for="a_r2">로그인 페이지 만들기</label>
+              </div>
+              <div class="meta"><span class="due">마감시간 : 12/14/일/20:00</span><span class="subm">제출시간 : -</span></div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>📈 진행도</h3>
+        <div class="progress-wrap">
+          <div class="progress-row">
+            <span>전체 진행률</span>
+            <strong data-progress-label>0%</strong>
+          </div>
+          <div class="progress-bar"><div class="progress" data-progress></div></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn ghost" data-add-main>주요 일정 항목 추가</button>
+        <button class="btn ghost" data-add-role>내 역할 항목 추가</button>
+        <button class="btn primary" data-reset>체크 초기화</button>
+        <button class="btn primary" data-finish>팀플 종료</button>
+      </div>
+    </section>
+
+    <!-- 카드 B -->
+    <section class="card" data-card data-team-id="teamB">
+      <div class="card-head">
+        <span class="chip">팀플</span>
+        <input class="team-name" value="팀 이름" aria-label="팀 이름 입력" />
+        <button class="btn open" data-open>상세 열기</button>
+      </div>
+      <div class="section">
+        <h3>📌 주요 일정</h3>
+        <div class="box"><ul class="todo" data-list="main"></ul></div>
+      </div>
+      <div class="section">
+        <h3>👥 내 역할</h3>
+        <div class="box"><ul class="todo" data-list="role"></ul></div>
+      </div>
+      <div class="section">
+        <h3>📈 진행도</h3>
+        <div class="progress-wrap">
+          <div class="progress-row">
+            <span>전체 진행률</span>
+            <strong data-progress-label>0%</strong>
+          </div>
+          <div class="progress-bar"><div class="progress" data-progress></div></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn ghost" data-add-main>주요 일정 항목 추가</button>
+        <button class="btn ghost" data-add-role>내 역할 항목 추가</button>
+        <button class="btn primary" data-reset>체크 초기화</button>
+        <button class="btn primary" data-finish>팀플 종료</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- 지각 사유 모달 -->
+  <div class="backdrop" id="lateModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="lateTitle">
+      <h3 id="lateTitle">지각 사유를 선택해주세요</h3>
+      <p>마감시간보다 제출시간이 늦었습니다. 해당 사유를 선택해주세요.</p>
+      <div class="opts">
+        <label><input type="radio" name="lateReason" value="개인 사유"> 개인 사유</label>
+        <label><input type="radio" name="lateReason" value="팀플 일정 변경"> 팀플 일정 변경</label>
+        <label><input type="radio" name="lateReason" value="먼저 양해 구함"> 먼저 양해 구함</label>
+      </div>
+      <div class="actions">
+        <button class="cancel" id="lateCancel">취소</button>
+        <button class="ok" id="lateOk">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 팀플 종료 리포트 전체화면 모달 -->
+  <div class="report" id="reportModal" aria-hidden="true">
+    <div class="report-panel">
+      <div class="report-header">
+        <div class="report-title">팀플 종료 리포트</div>
+        <button class="report-close" id="reportClose">닫기</button>
+      </div>
+      <div id="reportBody"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ===== 날짜 유틸 ===== */
+    const WEEKS = ['일','월','화','수','목','금','토'];
+    const pad = n => String(n).padStart(2,'0');
+    function fmtKDatetime(d){const M=pad(d.getMonth()+1),D=pad(d.getDate()),W=WEEKS[d.getDay()],hh=pad(d.getHours()),mm=pad(d.getMinutes());return `${M}/${D}/${W}/${hh}:${mm}`;}
+    function parseOrNull(s){
+      if(!s) return null;
+      const t=s.trim();
+      let m=t.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})$/);
+      if(m){const d=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]); return isNaN(d)?null:d;}
+      m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{1,2}):(\d{2})$/);
+      if(m){const now=new Date(); const d=new Date(now.getFullYear(),+m[1]-1,+m[2],+m[3],+m[4]); return isNaN(d)?null:d;}
+      m = t.match(/^(\d{1,2})\/(\d{1,2})\/[가-힣]{1,2}\/(\d{1,2}):(\d{2})$/);
+      if(m){const now=new Date(); const d=new Date(now.getFullYear(),+m[1]-1,+m[2],+m[3],+m[4]); return isNaN(d)?null:d;}
+      return null;
+    }
+
+    /* ===== 메타 보장/표시 ===== */
+    function ensureMeta(li){
+      if(!li.querySelector('.meta')){
+        const meta=document.createElement('div');
+        meta.className='meta';
+        meta.innerHTML=`<span class="due">마감시간 : -</span><span class="subm">제출시간 : -</span>`;
+        li.appendChild(meta);
+      }
+      if(li.dataset.due) li.querySelector('.meta .due').textContent='마감시간 : '+li.dataset.due;
+      if(li.dataset.submittedAt) li.querySelector('.meta .subm').textContent='제출시간 : '+li.dataset.submittedAt;
+      if(li.dataset.lateReason) addOrUpdateReason(li, li.dataset.lateReason);
+    }
+    function addOrUpdateReason(li, reason){
+      let r=li.querySelector('.meta .reason');
+      if(!r){ r=document.createElement('span'); r.className='reason'; li.querySelector('.meta').appendChild(r); }
+      r.textContent=`지각 사유: ${reason}`;
+    }
+
+    /* ===== 진행도 ===== */
+    function updateProgress(card){
+      const checks=card.querySelectorAll('input[type="checkbox"]');
+      const done=[...checks].filter(c=>c.checked).length;
+      const total=checks.length||1;
+      const pct=Math.round((done/total)*100);
+      card.querySelector('[data-progress]').style.width=pct+'%';
+      card.querySelector('[data-progress-label]').textContent=pct+'%';
+      return {done,total,pct};
+    }
+
+    /* ===== 항목 추가(마감 필수) ===== */
+    function addItem(card, listName){
+      const text=prompt('추가할 체크리스트 내용을 입력하세요');
+      if(!text) return;
+      let dueStr=null, parsed=null;
+      while(true){
+        dueStr=prompt('마감시간을 입력하세요\n예: 2025-11-07 23:59  또는  12/07/23:59');
+        if(dueStr===null) return;
+        parsed=parseOrNull(dueStr);
+        if(parsed) break;
+        alert('형식을 다시 확인해주세요.');
+      }
+      const ul=card.querySelector(`ul[data-list="${listName}"]`);
+      const id=listName+'_'+Math.random().toString(36).slice(2,8);
+      const li=document.createElement('li');
+      li.setAttribute('data-due', fmtKDatetime(parsed));
+      li.innerHTML=`
+        <div class="row">
+          <input type="checkbox" id="${id}" />
+          <label for="${id}">${text}</label>
+        </div>
+        <div class="meta"><span class="due">마감시간 : ${li.dataset.due}</span><span class="subm">제출시간 : -</span></div>
+      `;
+      ul.appendChild(li);
+      updateProgress(card);
+    }
+
+    /* ===== 직렬화 ===== */
+    function serializeCard(card){
+      const teamId=card.getAttribute('data-team-id');
+      const teamName=card.querySelector('.team-name')?.value?.trim()||'팀';
+      const lists={};
+      card.querySelectorAll('ul[data-list]').forEach(ul=>{
+        const key=ul.getAttribute('data-list');
+        lists[key]=[...ul.querySelectorAll('li')].map(li=>{
+          const cb=li.querySelector('input[type="checkbox"]');
+          const label=li.querySelector('label')?.textContent||'';
+          return {
+            text:label.trim(),
+            done:cb?.checked||false,
+            due:li.dataset.due||null,
+            submittedAt:li.dataset.submittedAt||null,
+            lateReason:li.dataset.lateReason||null
+          };
+        });
+      });
+      return {teamId,teamName,lists,updatedAt:Date.now()};
+    }
+    function saveToStore(data){ localStorage.setItem(`team:${data.teamId}`, JSON.stringify(data)); } // (선택) 스냅샷 저장용
+
+    /* ===== 지각 사유 모달 ===== */
+    const modalEl=document.getElementById('lateModal');
+    const btnOk=document.getElementById('lateOk');
+    const btnCancel=document.getElementById('lateCancel');
+    let _modalResolve=null;
+    function openLateModal(){
+      modalEl.querySelectorAll('input[name="lateReason"]').forEach(r=>r.checked=false);
+      modalEl.classList.add('show'); modalEl.setAttribute('aria-hidden','false');
+      return new Promise(res=>{_modalResolve=res;});
+    }
+    function closeLateModal(){ modalEl.classList.remove('show'); modalEl.setAttribute('aria-hidden','true'); }
+    btnOk.addEventListener('click', ()=>{
+      const picked=modalEl.querySelector('input[name="lateReason"]:checked');
+      if(!picked){ alert('사유를 선택해주세요.'); return; }
+      closeLateModal(); _modalResolve && _modalResolve({ok:true, value:picked.value});
+    });
+    btnCancel.addEventListener('click', ()=>{ closeLateModal(); _modalResolve && _modalResolve({ok:false}); });
+
+    /* ===== 리포트 모달 ===== */
+    const reportEl=document.getElementById('reportModal');
+    const reportBody=document.getElementById('reportBody');
+    document.getElementById('reportClose').addEventListener('click', ()=>{ reportEl.classList.remove('show'); reportEl.setAttribute('aria-hidden','true'); });
+
+    function openReport({teamName, progressPct, lateCounts, notParticipated, etcCount}){
+      // lateCounts: { '개인 사유': n, '팀플 일정 변경': n, '먼저 양해 구함': n }
+      const rows = [
+        ['지각(개인 사유)', lateCounts['개인 사유']||0],
+        ['지각(팀플 일정 변경)', lateCounts['팀플 일정 변경']||0],
+        ['지각(먼저 양해 구함)', lateCounts['먼저 양해 구함']||0],
+        ['미참여', notParticipated],
+        ['기타', etcCount]
+      ].map(([k,v])=>`<tr><th scope="row">${k}</th><td>${v}</td></tr>`).join('');
+
+      reportBody.innerHTML = `
+        <div class="kpi">
+          <div class="box"><div class="label">팀 이름</div><strong>${teamName}</strong></div>
+          <div class="box"><div class="label">진행도</div><strong>${progressPct}%</strong></div>
+        </div>
+        <h4 style="margin:0 0 8px;font-size:1.05rem;">성취도 / 평가도</h4>
+        <table class="report-table">
+          <thead><tr><th>항목</th><th>횟수</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+      reportEl.classList.add('show');
+      reportEl.setAttribute('aria-hidden','false');
+    }
+
+    /* ===== 카드 와이어링 ===== */
+    function wireCard(card){
+      // 체크 → 제출시간 입력 → 지각 판정
+      card.addEventListener('change', async (e)=>{
+        if(!e.target.matches('input[type="checkbox"]')) return;
+        const cb=e.target;
+        const li=cb.closest('li');
+        ensureMeta(li);
+
+        if(cb.checked){
+          const now=new Date(); const def=fmtKDatetime(now);
+          let subStr=null, parsedSubmit=null;
+          while(true){
+            subStr=prompt('제출 시간을 입력하세요\n예: 2025-11-07 14:30  또는  12/07/14:30\n[취소]=현재시간', def);
+            if(subStr===null){ parsedSubmit=now; break; }
+            const p=parseOrNull(subStr); if(p){ parsedSubmit=p; break; }
+            alert('형식을 다시 확인해주세요.');
+          }
+          li.dataset.submittedAt = fmtKDatetime(parsedSubmit);
+          li.querySelector('.meta .subm').textContent = '제출시간 : ' + li.dataset.submittedAt;
+
+          const dueD=parseOrNull(li.dataset.due);
+          if(dueD && parsedSubmit.getTime() > dueD.getTime()){
+            const result=await openLateModal();
+            if(result.ok){
+              li.dataset.lateReason=result.value;
+              addOrUpdateReason(li, result.value);
+            }else{
+              cb.checked=false;
+              li.dataset.submittedAt='';
+              li.querySelector('.meta .subm').textContent='제출시간 : -';
+            }
+          }
+        }
+        updateProgress(card);
+      });
+
+      // 항목 추가 버튼
+      card.querySelector('[data-add-main]').addEventListener('click', ()=>addItem(card,'main'));
+      card.querySelector('[data-add-role]').addEventListener('click', ()=>addItem(card,'role'));
+
+      // 체크 초기화
+      card.querySelector('[data-reset]').addEventListener('click', ()=>{
+        card.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked=false);
+        card.querySelectorAll('ul[data-list] > li').forEach(li=>{
+          // 제출시간/지각사유 초기화 표시만 리셋(데이터 속성은 그대로 둘 수도 있음)
+          li.dataset.submittedAt='';
+          const subEl=li.querySelector('.meta .subm'); if(subEl) subEl.textContent='제출시간 : -';
+          const r=li.querySelector('.meta .reason'); if(r) r.remove();
+          delete li.dataset.lateReason;
+        });
+        updateProgress(card);
+      });
+
+      // 팀플 종료(리포트)
+      card.querySelector('[data-finish]').addEventListener('click', ()=>{
+        // 진행도 계산
+        const {pct:progressPct}=updateProgress(card);
+        const teamName = card.querySelector('.team-name')?.value?.trim() || '팀';
+
+        // 집계
+        const lateCounts = {'개인 사유':0,'팀플 일정 변경':0,'먼저 양해 구함':0};
+        let notParticipated = 0;
+        let etcCount = 0; // 일단 기타는 0으로 유지 (향후 확장)
+
+        card.querySelectorAll('ul[data-list] > li').forEach(li=>{
+          const cb = li.querySelector('input[type="checkbox"]');
+          const due = parseOrNull(li.dataset.due);
+          const sub = parseOrNull(li.dataset.submittedAt);
+          if(!cb.checked){
+            // 전혀 체크하지 않은 항목 → 미참여
+            notParticipated += 1;
+          }else if(due && sub && sub.getTime() > due.getTime()){
+            // 지각 + 사유 카운트
+            const reason = li.dataset.lateReason || '개인 사유';
+            if(lateCounts[reason] === undefined){ lateCounts[reason] = 0; } // 예외 사유 확장 대비
+            lateCounts[reason] += 1;
+          }
+        });
+
+        // (선택) 스냅샷 저장하고 싶다면 ↓ 주석 해제
+        // const snapshot = {teamName, progressPct, lateCounts, notParticipated, etcCount, at: Date.now()};
+        // localStorage.setItem(`team:report:${teamName}`, JSON.stringify(snapshot));
+
+        // 리포트 열기
+        openReport({teamName, progressPct, lateCounts, notParticipated, etcCount});
+      });
+
+      // 상세 열기(기존)
+      card.querySelector('.btn.open').addEventListener('click', ()=>{
+        const data=serializeCard(card);
+        // saveToStore(data); // 필요 시 저장
+        location.href = `team-detail.html?team=${encodeURIComponent(data.teamId)}`;
+      });
+
+      // 초기 반영
+      card.querySelectorAll('ul[data-list] > li').forEach(ensureMeta);
+      updateProgress(card);
+    }
+
+    document.querySelectorAll('[data-card]').forEach(wireCard);
+  </script>
+</body>
+</html>
